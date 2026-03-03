@@ -1,21 +1,27 @@
 {
   "name": "KurdFlux Ultra Pro",
   "short_name": "KurdFlux",
-  "description": "باشترین وێبسایت بۆ بینینی کەناڵەکان و فیلمەکان",
-  "start_url": "/Kurdflux/index.html",
+  "description": "ئەپێکی پیشەگەری IPTV بۆ کەناڵە کوردی و جیهانییەکان",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0b",
   "theme_color": "#ff003c",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "https://i.supaimg.com/a2f34881-3b19-43f8-bdda-8a5e913800c7/9cc447ed-7b94-44ba-add5-50c845768c11.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "https://i.supaimg.com/a2f34881-3b19-43f8-bdda-8a5e913800c7/9cc447ed-7b94-44ba-add5-50c845768c11.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "categories": ["entertainment", "video"],
+  "lang": "ku",
+  "dir": "rtl"
 }
