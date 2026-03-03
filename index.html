@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>KurdFlux Ultra Pro</title>
     
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="./manifest.json">
     
     <meta name="theme-color" content="#ff003c">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -45,9 +45,19 @@
         .logo-area { display: flex; align-items: center; gap: 10px; }
         .logo { font-size: 20px; font-weight: 900; background: linear-gradient(45deg, #ff003c, #ff6b6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-        /* ستایلی دوگمەی ئینستاڵ */
-        #installBtn { display: none; background: var(--accent); color: white; border: none; padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: bold; cursor: pointer; animation: bounce 2s infinite; }
-        @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        /* ستایلی دوگمەی دابەزاندن */
+        #installBtn { 
+            display: none; /* تەنها کاتێک دەردەکەوێت کە مانیفێست کار بکات */
+            background: var(--accent); 
+            color: white; 
+            border: none; 
+            padding: 6px 15px; 
+            border-radius: 10px; 
+            font-size: 12px; 
+            font-weight: bold; 
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(255, 0, 60, 0.3);
+        }
 
         .header-tools { display: flex; gap: 8px; align-items: center; }
         .mode-btn { background: var(--surface); color: var(--text); border: 1px solid var(--border); width: 34px; height: 34px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
@@ -155,37 +165,37 @@
 </div>
 
 <script>
-    // --- بەشی PWA و Install ---
+    // --- بەشی دابەزاندن و PWA ---
     let deferredPrompt;
     const installBtn = document.getElementById('installBtn');
 
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
+        // نیشاندانی دوگمەکە کاتێک وێبگەڕ ئامادەیە
         installBtn.style.display = 'block';
 
         installBtn.addEventListener('click', () => {
             deferredPrompt.prompt();
             deferredPrompt.userChoice.then((choiceResult) => {
                 if (choiceResult.outcome === 'accepted') {
-                    console.log('App Installed');
+                    console.log('App installed!');
                 }
                 installBtn.style.display = 'none';
             });
         });
     });
 
-    window.addEventListener('appinstalled', () => {
-        installBtn.style.display = 'none';
-    });
-
+    // بەستنەوەی Service Worker
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js');
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('SW Registered!'))
+                .catch(err => console.log('SW Error: ', err));
         });
     }
 
-    // --- کۆدە کۆنەکانی خۆت لێرەوە دەست پێ دەکات ---
+    // --- لۆجیکی ئەپەکە ---
     const translations = {
         ku: { home: "سەرەکی", fav: "دڵخوازەکان", search: "بگەڕێ...", error: "⚠️ ئەم کەناڵە کار ناکات!", cats: ["هەمووان", "کوردستان", "وەرزش", "هەواڵ", "منداڵان", "فیلم"] },
         en: { home: "Home", fav: "Favorites", search: "Search...", error: "⚠️ Channel Offline!", cats: ["All", "Kurdistan", "Sports", "News", "Kids", "Movies"] },
