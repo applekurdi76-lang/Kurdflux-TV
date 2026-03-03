@@ -42,7 +42,12 @@
         body { background: var(--bg); color: var(--text); margin: 0; height: 100vh; overflow: hidden; }
 
         header { padding: 15px 20px 10px; display: flex; justify-content: space-between; align-items: center; }
+        .logo-area { display: flex; align-items: center; gap: 10px; }
         .logo { font-size: 20px; font-weight: 900; background: linear-gradient(45deg, #ff003c, #ff6b6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        /* ستایلی دوگمەی ئینستاڵ */
+        #installBtn { display: none; background: var(--accent); color: white; border: none; padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: bold; cursor: pointer; animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
 
         .header-tools { display: flex; gap: 8px; align-items: center; }
         .mode-btn { background: var(--surface); color: var(--text); border: 1px solid var(--border); width: 34px; height: 34px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
@@ -97,7 +102,10 @@
 <div id="errorToast">⚠️ ئەم کەناڵە لە ئێستادا بەردەست نییە!</div>
 
 <header>
-    <div class="logo">KurdFlux</div>
+    <div class="logo-area">
+        <div class="logo">KurdFlux</div>
+        <button id="installBtn"><i class="fa-solid fa-download"></i> دابەزاندن</button>
+    </div>
     <div class="header-tools">
         <button class="mode-btn" onclick="toggleTheme()"><i class="fa-solid fa-moon"></i></button>
         <select class="lang-select" id="langSelect" onchange="updateLang(this.value)">
@@ -147,6 +155,37 @@
 </div>
 
 <script>
+    // --- بەشی PWA و Install ---
+    let deferredPrompt;
+    const installBtn = document.getElementById('installBtn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        installBtn.style.display = 'block';
+
+        installBtn.addEventListener('click', () => {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('App Installed');
+                }
+                installBtn.style.display = 'none';
+            });
+        });
+    });
+
+    window.addEventListener('appinstalled', () => {
+        installBtn.style.display = 'none';
+    });
+
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js');
+        });
+    }
+
+    // --- کۆدە کۆنەکانی خۆت لێرەوە دەست پێ دەکات ---
     const translations = {
         ku: { home: "سەرەکی", fav: "دڵخوازەکان", search: "بگەڕێ...", error: "⚠️ ئەم کەناڵە کار ناکات!", cats: ["هەمووان", "کوردستان", "وەرزش", "هەواڵ", "منداڵان", "فیلم"] },
         en: { home: "Home", fav: "Favorites", search: "Search...", error: "⚠️ Channel Offline!", cats: ["All", "Kurdistan", "Sports", "News", "Kids", "Movies"] },
@@ -279,13 +318,6 @@
     async function togglePiP() { if(video !== document.pictureInPictureElement) await video.requestPictureInPicture(); else await document.exitPictureInPicture(); }
 
     updateLang('ku');
-
-    // ئەم بەشە تەنها بۆ پێکەوەبەستنی ئەپەکەیە و هیچ شتێک تێک نادات
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js');
-        });
-    }
 </script>
 
 </body>
