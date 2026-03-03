@@ -5,14 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>KurdFlux Ultra Pro</title>
     
-    <link rel="manifest" href="./manifest.json">
-    
-    <meta name="theme-color" content="#ff003c">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="KurdFlux">
-    <link rel="apple-touch-icon" href="https://i.supaimg.com/a2f34881-3b19-43f8-bdda-8a5e913800c7/9cc447ed-7b94-44ba-add5-50c845768c11.png">
+    <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="https://i.supaimg.com/a2f34881-3b19-43f8-bdda-8a5e913800c7/9cc447ed-7b94-44ba-add5-50c845768c11.png">
+    <meta name="theme-color" content="#ff003c">
 
     <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -42,26 +37,10 @@
         body { background: var(--bg); color: var(--text); margin: 0; height: 100vh; overflow: hidden; }
 
         header { padding: 15px 20px 10px; display: flex; justify-content: space-between; align-items: center; }
-        .logo-area { display: flex; align-items: center; gap: 10px; }
         .logo { font-size: 20px; font-weight: 900; background: linear-gradient(45deg, #ff003c, #ff6b6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-
-        /* ستایلی دوگمەی دابەزاندن */
-        #installBtn { 
-            display: none; /* تەنها کاتێک دەردەکەوێت کە مانیفێست کار بکات */
-            background: var(--accent); 
-            color: white; 
-            border: none; 
-            padding: 6px 15px; 
-            border-radius: 10px; 
-            font-size: 12px; 
-            font-weight: bold; 
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(255, 0, 60, 0.3);
-        }
 
         .header-tools { display: flex; gap: 8px; align-items: center; }
         .mode-btn { background: var(--surface); color: var(--text); border: 1px solid var(--border); width: 34px; height: 34px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        
         select.lang-select { background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 5px; border-radius: 10px; font-size: 11px; outline: none; }
 
         .history-section { padding: 0 20px; display: none; margin-bottom: 5px; }
@@ -84,6 +63,8 @@
         main { height: calc(100vh - 220px); overflow-y: auto; padding: 10px 20px 100px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 12px; }
         
+        .ad-item { grid-column: 1 / -1; display: flex; justify-content: center; align-items: center; background: var(--surface); border-radius: var(--radius); border: 1px dashed var(--accent); margin: 10px 0; min-height: 100px; overflow: hidden; }
+
         .card { background: var(--surface); border-radius: var(--radius); overflow: hidden; position: relative; border: 1px solid var(--border); }
         .card .poster { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; padding: 10px; cursor: pointer; }
         .card img { max-width: 100%; max-height: 100%; object-fit: contain; }
@@ -112,10 +93,7 @@
 <div id="errorToast">⚠️ ئەم کەناڵە لە ئێستادا بەردەست نییە!</div>
 
 <header>
-    <div class="logo-area">
-        <div class="logo">KurdFlux</div>
-        <button id="installBtn"><i class="fa-solid fa-download"></i> دابەزاندن</button>
-    </div>
+    <div class="logo">KurdFlux</div>
     <div class="header-tools">
         <button class="mode-btn" onclick="toggleTheme()"><i class="fa-solid fa-moon"></i></button>
         <select class="lang-select" id="langSelect" onchange="updateLang(this.value)">
@@ -165,37 +143,6 @@
 </div>
 
 <script>
-    // --- بەشی دابەزاندن و PWA ---
-    let deferredPrompt;
-    const installBtn = document.getElementById('installBtn');
-
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        // نیشاندانی دوگمەکە کاتێک وێبگەڕ ئامادەیە
-        installBtn.style.display = 'block';
-
-        installBtn.addEventListener('click', () => {
-            deferredPrompt.prompt();
-            deferredPrompt.userChoice.then((choiceResult) => {
-                if (choiceResult.outcome === 'accepted') {
-                    console.log('App installed!');
-                }
-                installBtn.style.display = 'none';
-            });
-        });
-    });
-
-    // بەستنەوەی Service Worker
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-                .then(reg => console.log('SW Registered!'))
-                .catch(err => console.log('SW Error: ', err));
-        });
-    }
-
-    // --- لۆجیکی ئەپەکە ---
     const translations = {
         ku: { home: "سەرەکی", fav: "دڵخوازەکان", search: "بگەڕێ...", error: "⚠️ ئەم کەناڵە کار ناکات!", cats: ["هەمووان", "کوردستان", "وەرزش", "هەواڵ", "منداڵان", "فیلم"] },
         en: { home: "Home", fav: "Favorites", search: "Search...", error: "⚠️ Channel Offline!", cats: ["All", "Kurdistan", "Sports", "News", "Kids", "Movies"] },
@@ -209,6 +156,17 @@
     const video = document.getElementById('video');
     const hls = new Hls({ capLevelToPlayerSize: true });
     const plyr = new Plyr(video, { controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'] });
+
+    // تەنها بۆ ڕێکلامی ناو بۆکسەکان بەکار دێت
+    function initAd(id) {
+        const adContainer = document.getElementById(id);
+        if (adContainer && adContainer.innerHTML === "") {
+            const ins = document.createElement('script');
+            ins.src = "https://pl28832217.effectivegatecpm.com/bf/4a/d7/bf4ad72b31cf599ec8ce2bf666f44261.js";
+            ins.async = true;
+            adContainer.appendChild(ins);
+        }
+    }
 
     function toggleTheme() { document.body.classList.toggle('light-mode'); }
 
@@ -282,6 +240,14 @@
                 </div>
                 <div class="info">${ch.name.substring(0,12)}</div>`;
             grid.appendChild(d);
+
+            // دانانی بۆکسی ڕێکلام لە ناو لیستەکە
+            if ((index + 1) % 15 === 0) {
+                const adId = `ad-box-${index}`;
+                const adDiv = document.createElement('div'); adDiv.className = 'ad-item';
+                adDiv.innerHTML = `<div id="${adId}"></div>`; grid.appendChild(adDiv);
+                setTimeout(() => initAd(adId), 100);
+            }
         });
     }
 
@@ -292,6 +258,7 @@
         if (Hls.isSupported()) {
             hls.loadSource(url); hls.attachMedia(video);
             hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(showError));
+            hls.on(Hls.Events.ERROR, (e, data) => { if(data.fatal) showError(); });
             hls.on(Hls.Events.FRAG_LOADED, (e, d) => {
                 if(d.stats.bw) document.getElementById('speedVal').innerText = (d.stats.bw / (1024*1024)).toFixed(1) + " Mbps";
             });
@@ -326,6 +293,12 @@
     }
     function activateTurbo() { isTurboMode = !isTurboMode; hls.currentLevel = isTurboMode ? 0 : -1; document.getElementById('turboBtn').innerText = isTurboMode ? "TURBO: ON" : "TURBO: OFF"; }
     async function togglePiP() { if(video !== document.pictureInPictureElement) await video.requestPictureInPicture(); else await document.exitPictureInPicture(); }
+
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Failed', err));
+        });
+    }
 
     updateLang('ku');
 </script>
