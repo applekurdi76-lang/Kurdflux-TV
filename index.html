@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl" id="htmlTag">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KurdFlux Ultra Pro</title>
+    
+    <link rel="manifest" href="manifest.json">
+    
+    <meta name="theme-color" content="#ff003c">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="KurdFlux">
+    <link rel="apple-touch-icon" href="https://i.supaimg.com/a2f34881-3b19-43f8-bdda-8a5e913800c7/9cc447ed-7b94-44ba-add5-50c845768c11.png">
+    <link rel="icon" type="image/png" href="https://i.supaimg.com/a2f34881-3b19-43f8-bdda-8a5e913800c7/9cc447ed-7b94-44ba-add5-50c845768c11.png">
+
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+
+    <style>
+        :root {
+            --accent: #ff003c;
+            --bg: #0a0a0b;
+            --surface: #161618;
+            --text: #ffffff;
+            --nav-bg: rgba(20, 20, 25, 0.85);
+            --border: rgba(255, 255, 255, 0.05);
+            --radius: 14px;
+        }
+
+        .light-mode {
+            --bg: #f0f2f5;
+            --surface: #ffffff;
+            --text: #121212;
+            --nav-bg: rgba(255, 255, 255, 0.9);
+            --border: rgba(0, 0, 0, 0.05);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', sans-serif; transition: 0.3s; }
+        body { background: var(--bg); color: var(--text); margin: 0; height: 100vh; overflow: hidden; }
+
+        header { padding: 15px 20px 10px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 20px; font-weight: 900; background: linear-gradient(45deg, #ff003c, #ff6b6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        .header-tools { display: flex; gap: 8px; align-items: center; }
+        .mode-btn { background: var(--surface); color: var(--text); border: 1px solid var(--border); width: 34px; height: 34px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        
+        select.lang-select { background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 5px; border-radius: 10px; font-size: 11px; outline: none; }
+
+        .history-section { padding: 0 20px; display: none; margin-bottom: 5px; }
+        .history-section.active { display: block; }
+        .history-list { display: flex; overflow-x: auto; gap: 12px; padding: 8px 0; scrollbar-width: none; }
+        .history-item { min-width: 55px; text-align: center; }
+        .history-item img { width: 45px; height: 45px; border-radius: 12px; border: 2px solid var(--accent); padding: 3px; background: #fff; object-fit: contain; }
+        .history-item span { display: block; font-size: 9px; margin-top: 4px; opacity: 0.7; }
+
+        .categories { display: flex; overflow-x: auto; gap: 8px; padding: 10px 20px; scrollbar-width: none; }
+        .cat-item { background: var(--surface); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; cursor: pointer; border: 1px solid var(--border); display: flex; align-items: center; gap: 5px; }
+        .cat-item.active { background: var(--accent); color: #fff; }
+        .cat-count { font-size: 9px; opacity: 0.6; background: rgba(0,0,0,0.2); padding: 1px 5px; border-radius: 8px; }
+
+        .search-area { padding: 5px 20px; }
+        .search-box { position: relative; }
+        .search-box input { width: 100%; background: var(--surface); border: 1px solid var(--border); padding: 10px 35px; border-radius: 12px; color: var(--text); outline: none; font-size: 14px; }
+        .search-box i { position: absolute; right: 12px; top: 13px; color: #888; font-size: 14px; }
+
+        main { height: calc(100vh - 220px); overflow-y: auto; padding: 10px 20px 100px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 12px; }
+        
+        .card { background: var(--surface); border-radius: var(--radius); overflow: hidden; position: relative; border: 1px solid var(--border); }
+        .card .poster { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; padding: 10px; cursor: pointer; }
+        .card img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .card .info { padding: 6px; font-size: 10px; text-align: center; font-weight: bold; }
+        .fav-btn { position: absolute; top: 8px; left: 8px; font-size: 16px; color: rgba(255,255,255,0.2); z-index: 5; }
+        .fav-btn.active { color: #ffcc00; }
+
+        #errorToast { position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%); background: #ff003c; color: white; padding: 10px 20px; border-radius: 20px; font-size: 12px; font-weight: bold; z-index: 3000; display: none; box-shadow: 0 5px 15px rgba(255,0,60,0.4); }
+
+        #playerUI { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 2000; display: none; }
+        .player-header { position: absolute; top: 0; width: 100%; padding: 15px; background: linear-gradient(rgba(0,0,0,0.8), transparent); z-index: 2100; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
+        .hidden-ui .player-header, .hidden-ui .speed-meter { opacity: 0; pointer-events: none; }
+        .speed-meter { position: absolute; top: 65px; right: 20px; background: rgba(0,0,0,0.5); padding: 4px 10px; border-radius: 8px; font-size: 11px; color: #00ff00; z-index: 2100; }
+        
+        nav { position: fixed; bottom: 15px; left: 20px; right: 20px; height: 75px; background: var(--nav-bg); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); display: flex; border: 1px solid var(--border); border-radius: 20px; z-index: 1000; }
+        .nav-link { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #888; cursor: pointer; }
+        .nav-link i { font-size: 24px; margin-bottom: 4px; }
+        .nav-link span { font-size: 14px; font-weight: bold; }
+        .nav-link.active { color: var(--accent); }
+
+        ::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="dark-mode">
+
+<div id="errorToast">⚠️ ئەم کەناڵە لە ئێستادا بەردەست نییە!</div>
+
+<header>
+    <div class="logo">KurdFlux</div>
+    <div class="header-tools">
+        <button class="mode-btn" onclick="toggleTheme()"><i class="fa-solid fa-moon"></i></button>
+        <select class="lang-select" id="langSelect" onchange="updateLang(this.value)">
+            <option value="ku">Kurdî</option>
+            <option value="en">English</option>
+            <option value="tr">Türkçe</option>
+            <option value="ar">العربية</option>
+        </select>
+    </div>
+</header>
+
+<div class="history-section" id="historySection">
+    <div class="history-list" id="historyList"></div>
+</div>
+
+<div class="categories" id="catList"></div>
+
+<div class="search-area">
+    <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="searchInput" onkeyup="filter()" placeholder="بگەڕێ...">
+    </div>
+</div>
+
+<main><div class="grid" id="mainGrid"></div></main>
+
+<nav>
+    <div class="nav-link active" id="homeNav" onclick="goHome()"><i class="fa-solid fa-house-chimney"></i><span id="txtHome">سەرەکی</span></div>
+    <div class="nav-link" id="favNav" onclick="showFavs()"><i class="fa-solid fa-heart"></i><span id="txtFav">دڵخوازەکان</span></div>
+</nav>
+
+<div id="playerUI">
+    <div class="player-header">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <i class="fa-solid fa-chevron-right" id="backBtn" onclick="closePlayer()" style="font-size:18px; color:white; cursor:pointer;"></i>
+            <span id="chNameDisplay" style="color:white; font-size:14px; font-weight:bold;">-</span>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <button id="turboBtn" onclick="activateTurbo()" style="background:rgba(255,255,255,0.1); border:none; color:white; padding:4px 10px; border-radius:10px; font-size:10px;">TURBO: OFF</button>
+            <i class="fa-solid fa-expand" onclick="togglePiP()" style="color:white; font-size:16px; cursor:pointer;"></i>
+        </div>
+    </div>
+    <div class="speed-meter" id="speedMeter"><i class="fa-solid fa-bolt"></i> <span id="speedVal">0.0 Mbps</span></div>
+    <div onclick="toggleUI()" style="width:100%; height:100%; display:flex; align-items:center; background:#000;">
+        <video id="video" playsinline crossorigin="anonymous" style="width: 100%;"></video>
+    </div>
+</div>
+
+<script>
+    const translations = {
+        ku: { home: "سەرەکی", fav: "دڵخوازەکان", search: "بگەڕێ...", error: "⚠️ ئەم کەناڵە کار ناکات!", cats: ["هەمووان", "کوردستان", "وەرزش", "هەواڵ", "منداڵان", "فیلم"] },
+        en: { home: "Home", fav: "Favorites", search: "Search...", error: "⚠️ Channel Offline!", cats: ["All", "Kurdistan", "Sports", "News", "Kids", "Movies"] },
+        tr: { home: "Anasayfa", fav: "Favoriler", search: "Ara...", error: "⚠️ Kanal Çalışmıyor!", cats: ["Hepsi", "Kürdistan", "Spor", "Haber", "Çocuk", "Filmler"] },
+        ar: { home: "الرئيسية", fav: "المفضلات", search: "بحث...", error: "⚠️ القناة معطلة!", cats: ["الکل", "كوردستان", "رياضة", "أخبار", "أطفال", "أفلام"] }
+    };
+
+    let currentLang = 'ku', allChannels = [], favs = JSON.parse(localStorage.getItem('k_favs')) || [], history = JSON.parse(localStorage.getItem('k_history')) || [], uiTimer, isTurboMode = false;
+    let categoryCounts = [0, 0, 0, 0, 0, 0];
+
+    const video = document.getElementById('video');
+    const hls = new Hls({ capLevelToPlayerSize: true });
+    const plyr = new Plyr(video, { controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'] });
+
+    function toggleTheme() { document.body.classList.toggle('light-mode'); }
+
+    function updateLang(lang) {
+        currentLang = lang;
+        const t = translations[lang];
+        document.getElementById('htmlTag').dir = (lang==='ku'||lang==='ar') ? 'rtl' : 'ltr';
+        document.getElementById('txtHome').innerText = t.home;
+        document.getElementById('txtFav').innerText = t.fav;
+        document.getElementById('searchInput').placeholder = t.search;
+        document.getElementById('errorToast').innerText = t.error;
+        loadAllData();
+    }
+
+    async function loadAllData() {
+        const paths = ['index.m3u', 'countries/iq.m3u', 'categories/sports.m3u', 'categories/news.m3u', 'categories/kids.m3u', 'categories/movies.m3u'];
+        renderCats();
+        for(let i=0; i<paths.length; i++) {
+            fetch(`https://iptv-org.github.io/iptv/${paths[i]}`)
+            .then(res => res.text())
+            .then(text => {
+                categoryCounts[i] = (text.match(/#EXTINF/g) || []).length;
+                if(i === (window.activeCat||0)) parseM3U(text);
+                renderCats();
+            });
+        }
+    }
+
+    function renderCats() {
+        const container = document.getElementById('catList'); container.innerHTML = "";
+        translations[currentLang].cats.forEach((c, i) => {
+            const div = document.createElement('div'); 
+            div.className = `cat-item ${i === (window.activeCat||0) ? 'active' : ''}`;
+            div.innerHTML = `${c} <span class="cat-count">${categoryCounts[i]}</span>`;
+            div.onclick = () => { window.activeCat = i; loadSpecificCat(i); };
+            container.appendChild(div);
+        });
+    }
+
+    async function loadSpecificCat(idx) {
+        const paths = ['index.m3u', 'countries/iq.m3u', 'categories/sports.m3u', 'categories/news.m3u', 'categories/kids.m3u', 'categories/movies.m3u'];
+        const res = await fetch(`https://iptv-org.github.io/iptv/${paths[idx]}`);
+        const text = await res.text();
+        parseM3U(text);
+        renderCats();
+    }
+
+    function parseM3U(data) {
+        allChannels = [];
+        const lines = data.split('\n');
+        for(let i=0; i<lines.length; i++) {
+            if(lines[i].startsWith('#EXTINF')) {
+                const name = lines[i].split(',')[1]?.trim();
+                const logo = lines[i].match(/tvg-logo="([^"]+)"/)?.[1] || "";
+                const url = lines[i+1]?.trim();
+                if(url && url.startsWith('http')) allChannels.push({name, logo, url});
+            }
+        }
+        renderGrid(allChannels);
+    }
+
+    function renderGrid(list) {
+        const grid = document.getElementById('mainGrid'); grid.innerHTML = "";
+        list.slice(0, 400).forEach((ch, index) => {
+            const isFav = favs.some(f => f.url === ch.url);
+            const d = document.createElement('div'); d.className = 'card';
+            d.innerHTML = `
+                <i class="fa-solid fa-heart fav-btn ${isFav?'active':''}" onclick="toggleFav(event,'${ch.name}','${ch.logo}','${ch.url}')"></i>
+                <div class="poster" onclick="playCh('${ch.url}','${ch.name}','${ch.logo}')">
+                    <img src="${ch.logo}" onerror="this.src='https://via.placeholder.com/80/161618/ffffff?text=TV'">
+                </div>
+                <div class="info">${ch.name.substring(0,12)}</div>`;
+            grid.appendChild(d);
+        });
+    }
+
+    function playCh(url, name, logo) {
+        document.getElementById('playerUI').style.display = 'block';
+        document.getElementById('chNameDisplay').innerText = name;
+        video.onerror = () => showError();
+        if (Hls.isSupported()) {
+            hls.loadSource(url); hls.attachMedia(video);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(showError));
+            hls.on(Hls.Events.FRAG_LOADED, (e, d) => {
+                if(d.stats.bw) document.getElementById('speedVal').innerText = (d.stats.bw / (1024*1024)).toFixed(1) + " Mbps";
+            });
+        }
+        history = [{name, url, logo}, ...history.filter(h => h.url !== url)].slice(0, 10);
+        localStorage.setItem('k_history', JSON.stringify(history)); renderHistory();
+        resetUITimer();
+    }
+
+    function showError() {
+        const t = document.getElementById('errorToast');
+        t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3500);
+        closePlayer();
+    }
+
+    function toggleUI() { document.getElementById('playerUI').classList.toggle('hidden-ui'); resetUITimer(); }
+    function resetUITimer() { clearTimeout(uiTimer); uiTimer = setTimeout(() => document.getElementById('playerUI').classList.add('hidden-ui'), 5000); }
+    function closePlayer() { video.pause(); document.getElementById('playerUI').style.display = 'none'; }
+    function toggleFav(e, name, logo, url) { e.stopPropagation(); const idx = favs.findIndex(f => f.url === url); if(idx > -1) favs.splice(idx, 1); else favs.push({name, logo, url}); localStorage.setItem('k_favs', JSON.stringify(favs)); e.target.classList.toggle('active'); }
+    function showFavs() { renderGrid(favs); }
+    function goHome() { loadSpecificCat(0); }
+    function filter() { const q = document.getElementById('searchInput').value.toLowerCase(); renderGrid(allChannels.filter(c => c.name.toLowerCase().includes(q))); }
+    function renderHistory() {
+        const sec = document.getElementById('historySection'), list = document.getElementById('historyList');
+        if (history.length === 0) { sec.classList.remove('active'); return; }
+        sec.classList.add('active'); list.innerHTML = "";
+        history.forEach(h => {
+            const div = document.createElement('div'); div.className = 'history-item';
+            div.innerHTML = `<img src="${h.logo}" onerror="this.src='https://via.placeholder.com/40'"><span>${h.name.substring(0,5)}..</span>`;
+            div.onclick = () => playCh(h.url, h.name, h.logo); list.appendChild(div);
+        });
+    }
+    function activateTurbo() { isTurboMode = !isTurboMode; hls.currentLevel = isTurboMode ? 0 : -1; document.getElementById('turboBtn').innerText = isTurboMode ? "TURBO: ON" : "TURBO: OFF"; }
+    async function togglePiP() { if(video !== document.pictureInPictureElement) await video.requestPictureInPicture(); else await document.exitPictureInPicture(); }
+
+    updateLang('ku');
+
+    // ئەم بەشە تەنها بۆ پێکەوەبەستنی ئەپەکەیە و هیچ شتێک تێک نادات
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js');
+        });
+    }
+</script>
+
+</body>
+</html>
