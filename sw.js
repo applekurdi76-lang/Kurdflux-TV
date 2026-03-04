@@ -23,41 +23,7 @@ self.addEventListener('fetch', event => {
         if (response) {
           return response;
         }
-        return fetch(event.request)
-          .then(networkResponse => {
-            // ئەگەر داوای فایلێکی ستاتیک بوو، لە کاشدا دەیخەین
-            if (event.request.url.includes('.css') || 
-                event.request.url.includes('.js') || 
-                event.request.url.includes('.png') ||
-                event.request.url.includes('.jpg')) {
-              const responseClone = networkResponse.clone();
-              caches.open(CACHE_NAME).then(cache => {
-                cache.put(event.request, responseClone);
-              });
-            }
-            return networkResponse;
-          })
-          .catch(() => {
-            // ئەگەر هێڵی ئینتەرنێت نەبوو، پەڕەی ئۆفلاین پیشان بدە (ئەگەر هەبێت)
-            if (event.request.mode === 'navigate') {
-              return caches.match('/offline.html');
-            }
-          });
+        return fetch(event.request);
       })
-  );
-});
-
-self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
   );
 });
