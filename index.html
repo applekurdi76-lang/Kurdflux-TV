@@ -11,12 +11,8 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="KurdFlux">
-    
-    <!-- ئایکۆنی ناوخۆیی (لە پرۆژەکەدا) -->
     <link rel="apple-touch-icon" href="icon.png">
     <link rel="icon" type="image/png" href="icon.png">
-    
-    <!-- بەستەری مانیفێست بە ڕێڕەوی ڕێژەیی -->
     <link rel="manifest" href="manifest.json">
 
     <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
@@ -25,7 +21,7 @@
     <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
 
     <style>
-        /* هەمان ستایلی پێشوو - هیچ گۆڕانکاری نەکراوە */
+        /* ========== RESET & VARIABLES ========== */
         :root {
             --accent: #ff003c;
             --bg: #0a0a0b;
@@ -34,6 +30,7 @@
             --nav-bg: rgba(20, 20, 25, 0.85);
             --border: rgba(255, 255, 255, 0.05);
             --radius: 14px;
+            --spinner: #ff003c;
         }
 
         .light-mode {
@@ -42,70 +39,456 @@
             --text: #121212;
             --nav-bg: rgba(255, 255, 255, 0.9);
             --border: rgba(0, 0, 0, 0.05);
+            --spinner: #ff003c;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', sans-serif; transition: 0.3s; }
-        body { background: var(--bg); color: var(--text); margin: 0; height: 100vh; overflow: hidden; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
 
-        header { padding: 15px 20px 10px; display: flex; justify-content: space-between; align-items: center; }
-        .logo { font-size: 20px; font-weight: 900; background: linear-gradient(45deg, #ff003c, #ff6b6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+            transition: background 0.3s, color 0.3s;
+        }
 
-        .header-tools { display: flex; gap: 8px; align-items: center; }
-        .mode-btn { background: var(--surface); color: var(--text); border: 1px solid var(--border); width: 34px; height: 34px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        
-        select.lang-select { background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 5px; border-radius: 10px; font-size: 11px; outline: none; }
+        /* ========== LOADING SPINNER ========== */
+        #loading-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(5px);
+            z-index: 3000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .spinner {
+            width: 50px; height: 50px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top-color: var(--spinner);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        .history-section { padding: 0 20px; display: none; margin-bottom: 5px; }
+        /* ========== HEADER ========== */
+        header {
+            padding: 15px 20px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 22px;
+            font-weight: 900;
+            background: linear-gradient(45deg, #ff003c, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 1px;
+        }
+        .header-tools {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .mode-btn {
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border);
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: 0.2s;
+        }
+        .mode-btn:hover { opacity: 0.9; }
+        select.lang-select {
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 8px 10px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 500;
+            outline: none;
+            cursor: pointer;
+        }
+
+        /* ========== HISTORY ========== */
+        .history-section {
+            padding: 0 20px;
+            display: none;
+            margin-bottom: 5px;
+        }
         .history-section.active { display: block; }
-        .history-list { display: flex; overflow-x: auto; gap: 12px; padding: 8px 0; scrollbar-width: none; }
-        .history-item { min-width: 55px; text-align: center; }
-        .history-item img { width: 45px; height: 45px; border-radius: 12px; border: 2px solid var(--accent); padding: 3px; background: #fff; object-fit: contain; }
-        .history-item span { display: block; font-size: 9px; margin-top: 4px; opacity: 0.7; }
+        .history-list {
+            display: flex;
+            overflow-x: auto;
+            gap: 15px;
+            padding: 8px 0;
+            scrollbar-width: none;
+        }
+        .history-item {
+            min-width: 60px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .history-item:active { transform: scale(0.95); }
+        .history-item img {
+            width: 50px;
+            height: 50px;
+            border-radius: 14px;
+            border: 2px solid var(--accent);
+            padding: 3px;
+            background: var(--surface);
+            object-fit: contain;
+        }
+        .history-item span {
+            display: block;
+            font-size: 10px;
+            margin-top: 5px;
+            opacity: 0.8;
+        }
 
-        .categories { display: flex; overflow-x: auto; gap: 8px; padding: 10px 20px; scrollbar-width: none; }
-        .cat-item { background: var(--surface); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; cursor: pointer; border: 1px solid var(--border); display: flex; align-items: center; gap: 5px; }
-        .cat-item.active { background: var(--accent); color: #fff; }
-        .cat-count { font-size: 9px; opacity: 0.6; background: rgba(0,0,0,0.2); padding: 1px 5px; border-radius: 8px; }
+        /* ========== CATEGORIES ========== */
+        .categories {
+            display: flex;
+            overflow-x: auto;
+            gap: 10px;
+            padding: 10px 20px;
+            scrollbar-width: none;
+        }
+        .cat-item {
+            background: var(--surface);
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.2s;
+        }
+        .cat-item.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+        .cat-count {
+            font-size: 10px;
+            opacity: 0.8;
+            background: rgba(0,0,0,0.2);
+            padding: 2px 6px;
+            border-radius: 20px;
+        }
 
-        .search-area { padding: 5px 20px; }
-        .search-box { position: relative; }
-        .search-box input { width: 100%; background: var(--surface); border: 1px solid var(--border); padding: 10px 35px; border-radius: 12px; color: var(--text); outline: none; font-size: 14px; }
-        .search-box i { position: absolute; right: 12px; top: 13px; color: #888; font-size: 14px; }
+        /* ========== SEARCH ========== */
+        .search-area {
+            padding: 5px 20px;
+        }
+        .search-box {
+            position: relative;
+        }
+        .search-box i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
+            font-size: 15px;
+            pointer-events: none;
+        }
+        .search-box input {
+            width: 100%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 12px 45px;
+            border-radius: 16px;
+            color: var(--text);
+            outline: none;
+            font-size: 15px;
+        }
+        .search-box input::placeholder { color: #888; }
 
-        main { height: calc(100vh - 220px); overflow-y: auto; padding: 10px 20px 100px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 12px; }
-        
-        .card { background: var(--surface); border-radius: var(--radius); overflow: hidden; position: relative; border: 1px solid var(--border); }
-        .card .poster { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; padding: 10px; cursor: pointer; }
-        .card .info { padding: 6px; font-size: 10px; text-align: center; font-weight: bold; }
-        .fav-btn { position: absolute; top: 8px; left: 8px; font-size: 16px; color: rgba(255,255,255,0.2); z-index: 5; }
-        .fav-btn.active { color: #ffcc00; }
+        /* ========== CARD STYLES - MYTV+ STYLE ========== */
+        .card {
+            background: var(--surface);
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid var(--border);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            aspect-ratio: 3/4; /* ڕێژەی چوارگۆشەیی */
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
 
-        #errorToast { position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%); background: #ff003c; color: white; padding: 10px 20px; border-radius: 20px; font-size: 12px; font-weight: bold; z-index: 3000; display: none; box-shadow: 0 5px 15px rgba(255,0,60,0.4); }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 25px rgba(255, 0, 60, 0.2);
+            border-color: var(--accent);
+        }
 
-        #playerUI { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 2000; display: none; }
-        .player-header { position: absolute; top: 0; width: 100%; padding: 15px; background: linear-gradient(rgba(0,0,0,0.8), transparent); z-index: 2100; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
-        .hidden-ui .player-header, .hidden-ui .speed-meter { opacity: 0; pointer-events: none; }
-        .speed-meter { position: absolute; top: 65px; right: 20px; background: rgba(0,0,0,0.5); padding: 4px 10px; border-radius: 8px; font-size: 11px; color: #00ff00; z-index: 2100; }
-        
-        nav { position: fixed; bottom: 15px; left: 20px; right: 20px; height: 75px; background: var(--nav-bg); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); display: flex; border: 1px solid var(--border); border-radius: 20px; z-index: 1000; }
-        .nav-link { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #888; cursor: pointer; }
-        .nav-link i { font-size: 24px; margin-bottom: 4px; }
-        .nav-link span { font-size: 14px; font-weight: bold; }
-        .nav-link.active { color: var(--accent); }
+        .card .poster {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            cursor: pointer;
+            background: var(--surface);
+            position: relative;
+        }
+
+        .card .poster::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: linear-gradient(to top, var(--surface), transparent);
+            pointer-events: none;
+        }
+
+        .card img {
+            max-width: 80%;
+            max-height: 80%;
+            object-fit: contain;
+            transition: transform 0.3s ease;
+            filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.5));
+        }
+
+        .card:hover img {
+            transform: scale(1.05);
+        }
+
+        .card .info {
+            padding: 12px 8px 10px;
+            font-size: 12px;
+            text-align: center;
+            font-weight: 600;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--text);
+            letter-spacing: 0.3px;
+        }
+
+        .fav-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 20px;
+            color: rgba(255, 255, 255, 0.4);
+            z-index: 10;
+            cursor: pointer;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s ease;
+            background: rgba(0, 0, 0, 0.3);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(2px);
+        }
+
+        .fav-btn.active {
+            color: #ffcc00;
+            background: rgba(0, 0, 0, 0.5);
+            transform: scale(1.1);
+        }
+
+        .fav-btn:hover {
+            transform: scale(1.15);
+            color: #ffcc00;
+        }
+
+        /* لە مۆبایلدا کەمێک بچووکتر */
+        @media (max-width: 480px) {
+            .card {
+                border-radius: 16px;
+            }
+            
+            .card .info {
+                font-size: 10px;
+                padding: 8px 5px;
+            }
+            
+            .fav-btn {
+                width: 28px;
+                height: 28px;
+                font-size: 16px;
+                top: 6px;
+                right: 6px;
+            }
+        }
+
+        /* ========== MAIN GRID ========== */
+        main {
+            height: calc(100vh - 260px);
+            overflow-y: auto;
+            padding: 10px 20px 80px;
+            scroll-behavior: smooth;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 15px;
+        }
+
+        #errorToast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ff003c;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 3000;
+            display: none;
+            box-shadow: 0 10px 25px rgba(255,0,60,0.4);
+            white-space: nowrap;
+        }
+
+        /* ========== PLAYER UI ========== */
+        #playerUI {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            z-index: 2000;
+            display: none;
+        }
+        .player-header {
+            position: absolute;
+            top: 0; width: 100%;
+            padding: 20px;
+            background: linear-gradient(rgba(0,0,0,0.9), transparent);
+            z-index: 2100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: opacity 0.3s;
+        }
+        .hidden-ui .player-header,
+        .hidden-ui .speed-meter { opacity: 0; pointer-events: none; }
+        .speed-meter {
+            position: absolute;
+            top: 80px; right: 20px;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+            padding: 6px 15px;
+            border-radius: 30px;
+            font-size: 13px;
+            color: #00ff00;
+            z-index: 2100;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        #backBtn, #pipBtn, #favPlayerBtn {
+            background: rgba(255,255,255,0.15);
+            border: none;
+            color: white;
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            transition: 0.2s;
+        }
+        #backBtn:hover, #pipBtn:hover, #favPlayerBtn:hover { background: rgba(255,255,255,0.3); }
+        #chNameDisplay {
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .plyr--video { height: 100%; }
+
+        /* ========== BOTTOM NAVIGATION ========== */
+        nav {
+            position: fixed;
+            bottom: 15px;
+            left: 20px;
+            right: 20px;
+            height: 75px;
+            background: var(--nav-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            z-index: 1000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .nav-link {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+            cursor: pointer;
+            transition: 0.2s;
+            border-radius: 30px;
+        }
+        .nav-link i { font-size: 26px; margin-bottom: 4px; }
+        .nav-link span { font-size: 12px; font-weight: 600; }
+        .nav-link.active { color: var(--accent); background: rgba(255,0,60,0.1); }
 
         ::-webkit-scrollbar { display: none; }
+        .no-channels { text-align: center; padding: 30px; opacity: 0.6; }
     </style>
 </head>
 <body class="dark-mode">
 
+<!-- Loading Overlay -->
+<div id="loading-overlay">
+    <div class="spinner"></div>
+    <div id="loading-text" style="color:white; font-weight:500;">بارکردن...</div>
+</div>
+
+<!-- Toast -->
 <div id="errorToast">⚠️ ئەم کەناڵە لە ئێستادا بەردەست نییە!</div>
 
+<!-- Header -->
 <header>
     <div class="logo">KurdFlux</div>
     <div class="header-tools">
-        <button class="mode-btn" onclick="toggleTheme()"><i class="fa-solid fa-moon"></i></button>
-        <select class="lang-select" id="langSelect" onchange="updateLang(this.value)">
+        <button class="mode-btn" id="themeToggle"><i class="fa-solid fa-moon"></i></button>
+        <select class="lang-select" id="langSelect">
             <option value="ku">Kurdî</option>
             <option value="en">English</option>
             <option value="tr">Türkçe</option>
@@ -114,196 +497,106 @@
     </div>
 </header>
 
+<!-- History -->
 <div class="history-section" id="historySection">
     <div class="history-list" id="historyList"></div>
 </div>
 
+<!-- Categories -->
 <div class="categories" id="catList"></div>
 
+<!-- Search -->
 <div class="search-area">
     <div class="search-box">
         <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" id="searchInput" onkeyup="filter()" placeholder="بگەڕێ...">
+        <input type="text" id="searchInput" placeholder="بگەڕێ...">
     </div>
 </div>
 
-<main><div class="grid" id="mainGrid"></div></main>
+<!-- Main Content -->
+<main>
+    <div class="grid" id="mainGrid"></div>
+</main>
 
+<!-- Bottom Navigation -->
 <nav>
-    <div class="nav-link active" id="homeNav" onclick="goHome()"><i class="fa-solid fa-house-chimney"></i><span id="txtHome">سەرەکی</span></div>
-    <div class="nav-link" id="favNav" onclick="showFavs()"><i class="fa-solid fa-heart"></i><span id="txtFav">دڵخوازەکان</span></div>
+    <div class="nav-link active" id="homeNav"><i class="fa-solid fa-house-chimney"></i><span id="txtHome">سەرەکی</span></div>
+    <div class="nav-link" id="favNav"><i class="fa-solid fa-heart"></i><span id="txtFav">دڵخوازەکان</span></div>
 </nav>
 
+<!-- Player -->
 <div id="playerUI">
     <div class="player-header">
-        <div style="display:flex; align-items:center; gap:10px;">
-            <i class="fa-solid fa-chevron-right" id="backBtn" onclick="closePlayer()" style="font-size:18px; color:white; cursor:pointer;"></i>
-            <span id="chNameDisplay" style="color:white; font-size:14px; font-weight:bold;">-</span>
+        <div style="display:flex; align-items:center; gap:15px;">
+            <button id="backBtn"><i class="fa-solid fa-arrow-right"></i></button>
+            <span id="chNameDisplay">-</span>
         </div>
-        <div style="display:flex; gap:10px; align-items:center;">
-            <button id="turboBtn" onclick="activateTurbo()" style="background:rgba(255,255,255,0.1); border:none; color:white; padding:4px 10px; border-radius:10px; font-size:10px;">TURBO: OFF</button>
-            <i class="fa-solid fa-expand" onclick="togglePiP()" style="color:white; font-size:16px; cursor:pointer;"></i>
+        <div style="display:flex; gap:12px; align-items:center;">
+            <button id="favPlayerBtn" title="زیادکردن بۆ دڵخوازەکان"><i class="fa-regular fa-heart"></i></button>
+            <button id="turboBtn" style="background:rgba(255,255,255,0.2); border:none; color:white; padding:6px 15px; border-radius:30px; font-size:12px; font-weight:600;">TURBO: OFF</button>
+            <button id="pipBtn"><i class="fa-solid fa-expand"></i></button>
         </div>
     </div>
-    <div class="speed-meter" id="speedMeter"><i class="fa-solid fa-bolt"></i> <span id="speedVal">0.0 Mbps</span></div>
-    <div onclick="toggleUI()" style="width:100%; height:100%; display:flex; align-items:center; background:#000;">
-        <video id="video" playsinline crossorigin="anonymous" style="width: 100%;"></video>
+    <div class="speed-meter"><i class="fa-solid fa-bolt"></i> <span id="speedVal">0.0 Mbps</span></div>
+    <div onclick="playerUI.toggleControls()" style="width:100%; height:100%; display:flex; align-items:center; background:#000;">
+        <video id="video" playsinline crossorigin="anonymous" style="width:100%; height:auto;"></video>
     </div>
 </div>
 
 <script>
-    const translations = {
-        ku: { home: "سەرەکی", fav: "دڵخوازەکان", search: "بگەڕێ...", error: "⚠️ ئەم کەناڵە کار ناکات!", cats: ["هەمووان", "کوردستان", "وەرزش", "هەواڵ", "منداڵان", "فیلم"] },
-        en: { home: "Home", fav: "Favorites", search: "Search...", error: "⚠️ Channel Offline!", cats: ["All", "Kurdistan", "Sports", "News", "Kids", "Movies"] },
-        tr: { home: "Anasayfa", fav: "Favoriler", search: "Ara...", error: "⚠️ Kanal Çalışmıyor!", cats: ["Hepsi", "Kürdistan", "Spor", "Haber", "Çocuk", "Filmler"] },
-        ar: { home: "الرئيسية", fav: "المفضلات", search: "بحث...", error: "⚠️ القناة معطلة!", cats: ["الکل", "كوردستان", "رياضة", "أخبار", "أطفال", "أفلام"] }
+    // ==================== CONFIG ====================
+    const IPTV_BASE = 'https://iptv-org.github.io/iptv/';
+    const CATEGORIES = [
+        { nameKey: 'all', path: 'index.m3u' },
+        { nameKey: 'kurdistan', path: 'countries/iq.m3u' },
+        { nameKey: 'sports', path: 'categories/sports.m3u' },
+        { nameKey: 'news', path: 'categories/news.m3u' },
+        { nameKey: 'kids', path: 'categories/kids.m3u' },
+        { nameKey: 'movies', path: 'categories/movies.m3u' }
+    ];
+    const TRANSLATIONS = {
+        ku: { home: 'سەرەکی', fav: 'دڵخوازەکان', search: 'بگەڕێ...', error: 'ئەم کەناڵە بەردەست نیە!', loading: 'بارکردن...', noCh: 'هیچ کەناڵێک نەدۆزرایەوە', cats: ['هەمووان', 'کوردستان', 'وەرزش', 'هەواڵ', 'منداڵان', 'فیلم'] },
+        en: { home: 'Home', fav: 'Favorites', search: 'Search...', error: 'Channel unavailable!', loading: 'Loading...', noCh: 'No channels found', cats: ['All', 'Kurdistan', 'Sports', 'News', 'Kids', 'Movies'] },
+        tr: { home: 'Anasayfa', fav: 'Favoriler', search: 'Ara...', error: 'Kanal kullanım dışı!', loading: 'Yükleniyor...', noCh: 'Kanal bulunamadı', cats: ['Hepsi', 'Kürdistan', 'Spor', 'Haber', 'Çocuk', 'Filmler'] },
+        ar: { home: 'الرئيسية', fav: 'المفضلات', search: 'بحث...', error: 'القناة غير متوفرة!', loading: 'جار التحميل...', noCh: 'لم يتم العثور على قنوات', cats: ['الكل', 'كوردستان', 'رياضة', 'أخبار', 'أطفال', 'أفلام'] }
     };
 
-    let currentLang = 'ku', allChannels = [], favs = JSON.parse(localStorage.getItem('k_favs')) || [], history = JSON.parse(localStorage.getItem('k_history')) || [], uiTimer, isTurboMode = false;
-    let categoryCounts = [0, 0, 0, 0, 0, 0];
+    // ==================== STATE ====================
+    const state = {
+        lang: 'ku',
+        theme: 'dark',
+        activeCat: 0,
+        allChannels: [],
+        channelsByCat: new Array(CATEGORIES.length).fill(null),
+        favs: JSON.parse(localStorage.getItem('k_favs')) || [],
+        history: JSON.parse(localStorage.getItem('k_history')) || [],
+        searchQuery: '',
+        showingFavs: false
+    };
 
+    // Player & HLS
+    let hls = null;
     const video = document.getElementById('video');
-    const hls = new Hls({ capLevelToPlayerSize: true });
-    const plyr = new Plyr(video, { controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'] });
+    let plyrInstance = null;
+    let uiHideTimer = null;
 
-    // وێنەی یەدەگی SVG (بۆ ئەوەی پشت بە دۆمەینی دەرەکی نەبەستێت)
-    const placeholderSVG = "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2280%22%20height%3D%2280%22%20viewBox%3D%220%200%2080%2080%22%3E%3Crect%20width%3D%2280%22%20height%3D%2280%22%20fill%3D%22%23161618%22%2F%3E%3Ctext%20x%3D%2210%22%20y%3D%2245%22%20font-family%3D%22Arial%22%20font-size%3D%2214%22%20fill%3D%22%23ffffff%22%3ETV%3C%2Ftext%3E%3C%2Fsvg%3E";
-    const historyPlaceholderSVG = "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2240%22%20height%3D%2240%22%20viewBox%3D%220%200%2040%2040%22%3E%3Crect%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%23161618%22%2F%3E%3Ctext%20x%3D%225%22%20y%3D%2225%22%20font-family%3D%22Arial%22%20font-size%3D%2210%22%20fill%3D%22%23ffffff%22%3ETV%3C%2Ftext%3E%3C%2Fsvg%3E";
-
-    function toggleTheme() { document.body.classList.toggle('light-mode'); }
-
-    function updateLang(lang) {
-        currentLang = lang;
-        const t = translations[lang];
-        document.getElementById('htmlTag').dir = (lang==='ku'||lang==='ar') ? 'rtl' : 'ltr';
-        document.getElementById('txtHome').innerText = t.home;
-        document.getElementById('txtFav').innerText = t.fav;
-        document.getElementById('searchInput').placeholder = t.search;
-        document.getElementById('errorToast').innerText = t.error;
-        loadAllData();
-    }
-
-    async function loadAllData() {
-        const paths = ['index.m3u', 'countries/iq.m3u', 'categories/sports.m3u', 'categories/news.m3u', 'categories/kids.m3u', 'categories/movies.m3u'];
-        renderCats();
-        for(let i=0; i<paths.length; i++) {
-            fetch(`https://iptv-org.github.io/iptv/${paths[i]}`)
-            .then(res => res.text())
-            .then(text => {
-                categoryCounts[i] = (text.match(/#EXTINF/g) || []).length;
-                if(i === (window.activeCat||0)) parseM3U(text);
-                renderCats();
-            });
-        }
-    }
-
-    function renderCats() {
-        const container = document.getElementById('catList'); container.innerHTML = "";
-        translations[currentLang].cats.forEach((c, i) => {
-            const div = document.createElement('div'); 
-            div.className = `cat-item ${i === (window.activeCat||0) ? 'active' : ''}`;
-            div.innerHTML = `${c} <span class="cat-count">${categoryCounts[i]}</span>`;
-            div.onclick = () => { window.activeCat = i; loadSpecificCat(i); };
-            container.appendChild(div);
-        });
-    }
-
-    async function loadSpecificCat(idx) {
-        const paths = ['index.m3u', 'countries/iq.m3u', 'categories/sports.m3u', 'categories/news.m3u', 'categories/kids.m3u', 'categories/movies.m3u'];
-        const res = await fetch(`https://iptv-org.github.io/iptv/${paths[idx]}`);
-        const text = await res.text();
-        parseM3U(text);
-        renderCats();
-    }
-
-    function parseM3U(data) {
-        allChannels = [];
-        const lines = data.split('\n');
-        for(let i=0; i<lines.length; i++) {
-            if(lines[i].startsWith('#EXTINF')) {
-                const name = lines[i].split(',')[1]?.trim();
-                const logo = lines[i].match(/tvg-logo="([^"]+)"/)?.[1] || "";
-                const url = lines[i+1]?.trim();
-                if(url && url.startsWith('http')) allChannels.push({name, logo, url});
-            }
-        }
-        renderGrid(allChannels);
-    }
-
-    function renderGrid(list) {
-        const grid = document.getElementById('mainGrid'); grid.innerHTML = "";
-        list.slice(0, 400).forEach((ch, index) => {
-            const isFav = favs.some(f => f.url === ch.url);
-            const d = document.createElement('div'); d.className = 'card';
-            d.innerHTML = `
-                <i class="fa-solid fa-heart fav-btn ${isFav?'active':''}" onclick="toggleFav(event,'${ch.name}','${ch.logo}','${ch.url}')"></i>
-                <div class="poster" onclick="playCh('${ch.url}','${ch.name}','${ch.logo}')">
-                    <img src="${ch.logo}" onerror="this.src='${placeholderSVG}'">
-                </div>
-                <div class="info">${ch.name.substring(0,12)}</div>`;
-            grid.appendChild(d);
-        });
-    }
-
-    function playCh(url, name, logo) {
-        document.getElementById('playerUI').style.display = 'block';
-        document.getElementById('chNameDisplay').innerText = name;
-        video.onerror = () => showError();
-        if (Hls.isSupported()) {
-            hls.loadSource(url); hls.attachMedia(video);
-            hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(showError));
-            hls.on(Hls.Events.FRAG_LOADED, (e, d) => {
-                if(d.stats.bw) document.getElementById('speedVal').innerText = (d.stats.bw / (1024*1024)).toFixed(1) + " Mbps";
-            });
-        }
-        history = [{name, url, logo}, ...history.filter(h => h.url !== url)].slice(0, 10);
-        localStorage.setItem('k_history', JSON.stringify(history)); renderHistory();
-        resetUITimer();
-    }
-
-    function showError() {
-        const t = document.getElementById('errorToast');
-        t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3500);
-        closePlayer();
-    }
-
-    function toggleUI() { document.getElementById('playerUI').classList.toggle('hidden-ui'); resetUITimer(); }
-    function resetUITimer() { clearTimeout(uiTimer); uiTimer = setTimeout(() => document.getElementById('playerUI').classList.add('hidden-ui'), 5000); }
-    function closePlayer() { video.pause(); document.getElementById('playerUI').style.display = 'none'; }
-    function toggleFav(e, name, logo, url) { e.stopPropagation(); const idx = favs.findIndex(f => f.url === url); if(idx > -1) favs.splice(idx, 1); else favs.push({name, logo, url}); localStorage.setItem('k_favs', JSON.stringify(favs)); e.target.classList.toggle('active'); }
-    function showFavs() { renderGrid(favs); }
-    function goHome() { loadSpecificCat(0); }
-    function filter() { const q = document.getElementById('searchInput').value.toLowerCase(); renderGrid(allChannels.filter(c => c.name.toLowerCase().includes(q))); }
-    function renderHistory() {
-        const sec = document.getElementById('historySection'), list = document.getElementById('historyList');
-        if (history.length === 0) { sec.classList.remove('active'); return; }
-        sec.classList.add('active'); list.innerHTML = "";
-        history.forEach(h => {
-            const div = document.createElement('div'); div.className = 'history-item';
-            div.innerHTML = `<img src="${h.logo}" onerror="this.src='${historyPlaceholderSVG}'"><span>${h.name.substring(0,6)}</span>`;
-            div.onclick = () => playCh(h.url, h.name, h.logo); list.appendChild(div);
-        });
-    }
-    function activateTurbo() { isTurboMode = !isTurboMode; hls.currentLevel = isTurboMode ? 0 : -1; document.getElementById('turboBtn').innerText = isTurboMode ? "TURBO: ON" : "TURBO: OFF"; }
-    async function togglePiP() { if(video !== document.pictureInPictureElement) await video.requestPictureInPicture(); else await document.exitPictureInPicture(); }
-
-    updateLang('ku');
-</script>
-
-<!-- تۆماری service worker بە ڕێڕەوی ڕێژەیی -->
-<script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-            navigator.serviceWorker.register('sw.js')
-                .then(function(registration) {
-                    console.log('Service Worker registered with scope:', registration.scope);
-                })
-                .catch(function(error) {
-                    console.log('Service Worker registration failed:', error);
-                });
-        });
-    }
-</script>
-
-</body>
-</html>
+    // DOM elements
+    const el = {
+        htmlTag: document.getElementById('htmlTag'),
+        loading: document.getElementById('loading-overlay'),
+        loadingText: document.getElementById('loading-text'),
+        toast: document.getElementById('errorToast'),
+        themeToggle: document.getElementById('themeToggle'),
+        langSelect: document.getElementById('langSelect'),
+        searchInput: document.getElementById('searchInput'),
+        catList: document.getElementById('catList'),
+        mainGrid: document.getElementById('mainGrid'),
+        historySection: document.getElementById('historySection'),
+        historyList: document.getElementById('historyList'),
+        homeNav: document.getElementById('homeNav'),
+        favNav: document.getElementById('favNav'),
+        txtHome: document.getElementById('txtHome'),
+        txtFav: document.getElementById('txtFav'),
+        playerUI: document.getElementById('playerUI'),
+        chNameDisplay: document.getElementById('chNameDisplay'),
+        speedVal: document.getElementById('speedVal
