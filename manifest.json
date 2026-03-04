@@ -2,7 +2,7 @@
   "name": "KurdFlux Ultra Pro",
   "short_name": "KurdFlux",
   "description": "ئەپێکی پیشەگەری IPTV بۆ کەناڵە کوردی و جیهانییەکان",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#0a0a0b",
   "theme_color": "#ff003c",
